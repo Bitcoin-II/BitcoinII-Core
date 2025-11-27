@@ -1,0 +1,93 @@
+#!/sbin/openrc-run
+
+# backward compatibility for existing gentoo layout 
+#
+if [ -d "/var/lib/bitcoinII/.bitcoinII" ]; then
+	BITCOINIID_DEFAULT_DATADIR="/var/lib/bitcoinII/.bitcoinII"
+else
+	BITCOINIID_DEFAULT_DATADIR="/var/lib/bitcoinIId"
+fi
+
+BITCOINIID_CONFIGFILE=${BITCOINIID_CONFIGFILE:-/etc/bitcoinII/bitcoinII.conf}
+BITCOINIID_PIDDIR=${BITCOINIID_PIDDIR:-/var/run/bitcoinIId}
+BITCOINIID_PIDFILE=${BITCOINIID_PIDFILE:-${BITCOINIID_PIDDIR}/bitcoinIId.pid}
+BITCOINIID_DATADIR=${BITCOINIID_DATADIR:-${BITCOINIID_DEFAULT_DATADIR}}
+BITCOINIID_USER=${BITCOINIID_USER:-${BITCOINII_USER:-bitcoinII}}
+BITCOINIID_GROUP=${BITCOINIID_GROUP:-bitcoinII}
+BITCOINIID_BIN=${BITCOINIID_BIN:-/usr/bin/bitcoinIId}
+BITCOINIID_NICE=${BITCOINIID_NICE:-${NICELEVEL:-0}}
+BITCOINIID_OPTS="${BITCOINIID_OPTS:-${BITCOINII_OPTS}}"
+
+name="BitcoinII Core Daemon"
+description="BitcoinII cryptocurrency P2P network daemon"
+
+command="/usr/bin/bitcoinIId"
+command_args="-pid=\"${BITCOINIID_PIDFILE}\" \
+		-conf=\"${BITCOINIID_CONFIGFILE}\" \
+		-datadir=\"${BITCOINIID_DATADIR}\" \
+		-daemon \
+		${BITCOINIID_OPTS}"
+
+required_files="${BITCOINIID_CONFIGFILE}"
+start_stop_daemon_args="-u ${BITCOINIID_USER} \
+			-N ${BITCOINIID_NICE} -w 2000"
+pidfile="${BITCOINIID_PIDFILE}"
+
+# The retry schedule to use when stopping the daemon. Could be either
+# a timeout in seconds or multiple signal/timeout pairs (like
+# "SIGKILL/180 SIGTERM/300")
+retry="${BITCOINIID_SIGTERM_TIMEOUT}"
+
+depend() {
+	need localmount net
+}
+
+# verify
+# 1) that the datadir exists and is writable (or create it)
+# 2) that a directory for the pid exists and is writable
+# 3) ownership and permissions on the config file
+start_pre() {
+	checkpath \
+	-d \
+	--mode 0750 \
+	--owner "${BITCOINIID_USER}:${BITCOINIID_GROUP}" \
+	"${BITCOINIID_DATADIR}"
+
+	checkpath \
+	-d \
+	--mode 0755 \
+	--owner "${BITCOINIID_USER}:${BITCOINIID_GROUP}" \
+	"${BITCOINIID_PIDDIR}"
+
+	checkpath -f \
+	-o "${BITCOINIID_USER}:${BITCOINIID_GROUP}" \
+	-m 0660 \
+	"${BITCOINIID_CONFIGFILE}"
+
+	checkconfig || return 1
+}
+
+checkconfig()
+{
+	if grep -qs '^rpcuser=' "${BITCOINIID_CONFIGFILE}" && \
+		! grep -qs '^rpcpassword=' "${BITCOINIID_CONFIGFILE}" ; then
+		eerror ""
+		eerror "ERROR: You must set a secure rpcpassword to run bitcoinIId."
+		eerror "The setting must appear in ${BITCOINIID_CONFIGFILE}"
+		eerror ""
+		eerror "This password is security critical to securing wallets "
+		eerror "and must not be the same as the rpcuser setting."
+		eerror "You can generate a suitable random password using the following "
+		eerror "command from the shell:"
+		eerror ""
+		eerror "bash -c 'tr -dc a-zA-Z0-9 < /dev/urandom | head -c32 && echo'"
+		eerror ""
+		eerror "It is recommended that you also set alertnotify so you are "
+		eerror "notified of problems:"
+		eerror ""
+		eerror "ie: alertnotify=echo %%s | mail -s \"BitcoinII Alert\"" \
+			"admin@foo.com"
+		eerror ""
+		return 1
+	fi
+}

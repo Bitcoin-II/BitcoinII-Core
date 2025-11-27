@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: BitcoinII Core Security Policy
+    url: https://github.com/bitcoinII/bitcoinII/blob/master/SECURITY.md
+    about: View security policy
+  - name: BitcoinII Core Developers
+    url: https://bitcoincore.org
+    about: BitcoinII Core homepage
