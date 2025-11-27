@@ -59,7 +59,7 @@ EOF
 if [ "$RUN_FUZZ_TESTS" = "true" ]; then
   export DIR_FUZZ_IN=${DIR_QA_ASSETS}/fuzz_corpora/
   if [ ! -d "$DIR_FUZZ_IN" ]; then
-    ${CI_RETRY_EXE} git clone --depth=1 https://github.com/bitcoinII-core/qa-assets "${DIR_QA_ASSETS}"
+    ${CI_RETRY_EXE} git clone --depth=1 https://github.com/bitcoin-core/qa-assets "${DIR_QA_ASSETS}"
   fi
   (
     cd "${DIR_QA_ASSETS}"
