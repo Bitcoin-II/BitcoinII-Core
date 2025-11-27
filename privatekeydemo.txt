@@ -1,0 +1,71 @@
+Descriptor wallet Private Key dump and import for upgrading from BitcoinII Core v27.0.0, because in some instances BitcoinII Core v29.0.0 refuses to read
+a wallet.dat file created by BitcoinII Core v27.0.0:
+
+With our original wallet loaded, in BitcoinII-Qt RPC Console, we'll dump our Private Keys for our existing wallet "Test":
+
+listdescriptors true
+
+
+{
+  "wallet_name": "Test",
+  "descriptors": [
+    {
+      "desc": "pkh(xprv9s21ZrQH143K3qLNvgqbifXmUvmoeHwiS1y1vMa4P4VTnG8w33acfk9sJQCHDdbEGxQZLvUuuxgMXTet1fidqzmwVN5VUWZV4nXmxLHUmms/44h/0h/0h/0/*)#fz3aul6h",
+      "timestamp": 1751758588,
+      "active": true,
+      "internal": false,
+      "range": [
+        0,
+        999
+      ],
+      "next": 0,
+      "next_index": 0
+    },
+
+getdescriptorinfo "pkh(xprv9s21ZrQH143K3qLNvgqbifXmUvmoeHwiS1y1vMa4P4VTnG8w33acfk9sJQCHDdbEGxQZLvUuuxgMXTet1fidqzmwVN5VUWZV4nXmxLHUmms/44h/0h/0h/0/*)"
+￼
+{
+  "descriptor": "pkh(xpub661MyMwAqRbcGKQr2iNc5oUW2xcJ3kfZoEtcijyfwQ2Sf4U5aatsDYUM9gQ69dX31GPFA66yieiwcSLKnyBoDh3B4BpeDCTGvezPcbq32KD/44h/0h/0h/0/*)#vterdysc",
+  "checksum": "fz3aul6h",
+  "isrange": true,
+  "issolvable": true,
+  "hasprivatekeys": true
+}
+
+We'll save all of our descriptors to a text file for safe keeping, before moving on to the next step after we've extracted the BitcoinII v29.0.0 binary
+and put it in place of the BitcoinII Core v27.0.0 binary. 
+
+In BitcoinII Core v29.0.0, we'll create a new wallet to import our private keys to:
+
+createwallet "Test2"
+
+Now, we'll import our Private Keys:
+￼
+importdescriptors '[{ "desc": "pkh(xprv9s21ZrQH143K3qLNvgqbifXmUvmoeHwiS1y1vMa4P4VTnG8w33acfk9sJQCHDdbEGxQZLvUuuxgMXTet1fidqzmwVN5VUWZV4nXmxLHUmms/44h/0h/0h/0/*)#fz3aul6h",  "timestamp": 0, "range": [0,100], "active": true, "watchonly": false  }]'
+
+
+
+￼
+[
+  {
+    "success": true
+  }
+]
+
+The scanned range was really small, so we want to make sure we capture all of our UTXOs by rescanning the entire blockchain:
+
+
+
+￼
+rescanblockchain
+
+
+
+￼
+{
+  "start_height": 0,
+  "stop_height": 26800
+}
+
+
+You now have all your BC2 in your new wallet on BitcoinII Core v29.0.0. 
