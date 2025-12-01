@@ -49,33 +49,26 @@ jobs:
           # Make Qt5 tools visible (qmake, macdeployqt, etc.)
           echo "$(brew --prefix qt@5)/bin" >> "$GITHUB_PATH"
 
-      - name: Configure with CMake (v29.1.0, BDB + ZMQ, no UPnP)
+      - name: Configure with CMake (v0.29.1, GUI + wallet + ZMQ + BDB + USDT)
         run: |
           mkdir -p build
           cd build
 
-          # Berkeley DB 4.8 from Homebrew
           BDB_PREFIX="$(brew --prefix berkeley-db@4)"
-
-          # ZMQ locations
           ZMQ_PREFIX="$(brew --prefix zeromq)"
-
-          # Extra custom flags for BitcoinII (e.g. USDT, whatever you added in CMake)
-          EXTRA_CMAKE_FLAGS=""
-          # Example:
-          # EXTRA_CMAKE_FLAGS+=" -DENABLE_USDT=ON"
 
           cmake .. \
             -DCMAKE_BUILD_TYPE=Release \
-            -DENABLE_GUI=ON \
-            -DENABLE_ZMQ=ON \
-            -DENABLE_UPNP=OFF \
+            -DBUILD_GUI=ON \
             -DENABLE_WALLET=ON \
-            -DBerkeleyDB_INCLUDE_DIR="${BDB_PREFIX}/include" \
-            -DBerkeleyDB_LIBRARY="${BDB_PREFIX}/lib/libdb_cxx-4.8.dylib" \
+            -DWITH_BDB=ON \
+            -DWITH_ZMQ=ON \
+            -DWITH_USDT=ON \
+            -DWITH_QRENCODE=ON \
+            -DBerkeleyDB_ROOT="${BDB_PREFIX}" \
             -DZMQ_INCLUDE_DIR="${ZMQ_PREFIX}/include" \
-            -DZMQ_LIBRARY="${ZMQ_PREFIX}/lib/libzmq.dylib" \
-            ${EXTRA_CMAKE_FLAGS}
+            -DZMQ_LIBRARY="${ZMQ_PREFIX}/lib/libzmq.dylib"
+
 
       - name: Build (CMake)
         run: |
