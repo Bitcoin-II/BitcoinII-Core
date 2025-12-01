@@ -1,0 +1,123 @@
+name: macOS arm64 .dmg (v29.1.0, CMake)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-dmg-v029:
+    runs-on: macos-14  # Apple Silicon runner
+
+    env:
+      TARGET_TAG: v29.1.0
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout release tag
+        run: |
+          git fetch --tags
+          echo "Checking out tag $TARGET_TAG..."
+          git checkout "$TARGET_TAG"
+          git submodule update --init --recursive || true
+
+      - name: Show environment info
+        run: |
+          uname -a
+          sw_vers
+          sysctl -n hw.logicalcpu || true
+
+      - name: Install build dependencies (Homebrew)
+        run: |
+          brew update
+
+          brew install \
+            cmake \
+            automake \
+            libtool \
+            pkg-config \
+            boost \
+            libevent \
+            qrencode \
+            sqlite \
+            zeromq \
+            berkeley-db@4 \
+            qt@5
+
+          # Make Qt5 tools visible (qmake, macdeployqt, etc.)
+          echo "$(brew --prefix qt@5)/bin" >> "$GITHUB_PATH"
+
+      - name: Configure with CMake (v29.1.0, BDB + ZMQ, no UPnP)
+        run: |
+          mkdir -p build
+          cd build
+
+          # Berkeley DB 4.8 from Homebrew
+          BDB_PREFIX="$(brew --prefix berkeley-db@4)"
+
+          # ZMQ locations
+          ZMQ_PREFIX="$(brew --prefix zeromq)"
+
+          # Extra custom flags for BitcoinII (e.g. USDT, whatever you added in CMake)
+          EXTRA_CMAKE_FLAGS=""
+          # Example:
+          # EXTRA_CMAKE_FLAGS+=" -DENABLE_USDT=ON"
+
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_GUI=ON \
+            -DENABLE_ZMQ=ON \
+            -DENABLE_UPNP=OFF \
+            -DENABLE_WALLET=ON \
+            -DBerkeleyDB_INCLUDE_DIR="${BDB_PREFIX}/include" \
+            -DBerkeleyDB_LIBRARY="${BDB_PREFIX}/lib/libdb_cxx-4.8.dylib" \
+            -DZMQ_INCLUDE_DIR="${ZMQ_PREFIX}/include" \
+            -DZMQ_LIBRARY="${ZMQ_PREFIX}/lib/libzmq.dylib" \
+            ${EXTRA_CMAKE_FLAGS}
+
+      - name: Build (CMake)
+        run: |
+          cd build
+          CORES="$(sysctl -n hw.logicalcpu || echo 4)"
+          echo "Building with $CORES cores"
+
+          # Adjust target name if your Qt GUI target is called something else
+          cmake --build . --target bitcoinII-qt -j"$CORES" || \
+          cmake --build . -j"$CORES"
+
+      - name: Create .dmg with macdeployqt
+        run: |
+          cd build
+
+          # Find the Qt app bundle (tweak pattern if your app bundle is named differently)
+          APP_BUNDLE="$(find . -maxdepth 5 -type d -name 'BitcoinII-Qt.app' | head -n 1 || true)"
+
+          if [ -z "$APP_BUNDLE" ]; then
+            echo "Could not find BitcoinII-Qt.app bundle, listing tree for debugging:"
+            find . -maxdepth 5 -type d -name '*.app' || true
+            exit 1
+          fi
+
+          echo "Found app bundle at: $APP_BUNDLE"
+
+          # Run macdeployqt to bundle Qt libs and create a DMG
+          MACDEPLOYQT="$(command -v macdeployqt || true)"
+          if [ -z "$MACDEPLOYQT" ]; then
+            echo "macdeployqt not found in PATH"
+            exit 1
+          fi
+
+          "$MACDEPLOYQT" "$APP_BUNDLE" -dmg -always-overwrite
+
+          echo "Generated DMG files:"
+          find . -maxdepth 5 -name '*.dmg' -print || true
+
+      - name: Upload .dmg artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bitcoinII-core-v29.1.0-macos-arm64-dmg
+          path: |
+            build/**/*.dmg
+          if-no-files-found: error
