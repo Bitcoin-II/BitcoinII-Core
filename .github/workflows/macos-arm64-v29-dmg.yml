@@ -63,7 +63,7 @@ jobs:
             -DENABLE_WALLET=ON \
             -DWITH_BDB=ON \
             -DWITH_ZMQ=ON \
-            -DWITH_USDT=ON \
+            -DWITH_USDT=OFF \
             -DWITH_QRENCODE=ON \
             -DBerkeleyDB_ROOT="${BDB_PREFIX}" \
             -DZMQ_INCLUDE_DIR="${ZMQ_PREFIX}/include" \
