@@ -80,37 +80,72 @@ jobs:
           cmake --build . --target bitcoinII-qt -j"$CORES" || \
           cmake --build . -j"$CORES"
 
-      - name: Create .dmg with macdeployqt
+      - name: Create .app bundle and .dmg with macdeployqt
         run: |
           cd build
 
-          # Find the Qt app bundle (tweak pattern if your app bundle is named differently)
-          APP_BUNDLE="$(find . -maxdepth 5 -type d -name 'BitcoinII-Qt.app' | head -n 1 || true)"
-
-          if [ -z "$APP_BUNDLE" ]; then
-            echo "Could not find BitcoinII-Qt.app bundle, listing tree for debugging:"
-            find . -maxdepth 5 -type d -name '*.app' || true
+          # Sanity: make sure we have the compiled binary
+          if [ ! -f "bin/bitcoinII-qt" ]; then
+            echo "bin/bitcoinII-qt not found, listing bin/:"
+            ls -l bin || true
             exit 1
           fi
 
-          echo "Found app bundle at: $APP_BUNDLE"
+          # Create a minimal .app bundle structure
+          APP_DIR="dist/BitcoinII-Qt.app"
+          mkdir -p "$APP_DIR/Contents/MacOS"
+          mkdir -p "$APP_DIR/Contents/Resources"
 
-          # Run macdeployqt to bundle Qt libs and create a DMG
+          # Copy the binary into the bundle and name it like the app
+          cp bin/bitcoinII-qt "$APP_DIR/Contents/MacOS/BitcoinII-Qt"
+          chmod +x "$APP_DIR/Contents/MacOS/BitcoinII-Qt"
+
+          # Write a simple Info.plist
+          cat > "$APP_DIR/Contents/Info.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleName</key>
+            <string>BitcoinII-Qt</string>
+            <key>CFBundleDisplayName</key>
+            <string>BitcoinII-Qt</string>
+            <key>CFBundleExecutable</key>
+            <string>BitcoinII-Qt</string>
+            <key>CFBundleIdentifier</key>
+            <string>org.bitcoin-ii.BitcoinII-Qt</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleVersion</key>
+            <string>${TARGET_TAG}</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${TARGET_TAG}</string>
+            <key>NSPrincipalClass</key>
+            <string>NSApplication</string>
+          </dict>
+          </plist>
+          EOF
+
+          echo "Created app bundle at: $APP_DIR"
+          find "$APP_DIR" -maxdepth 3 -print
+
+          # Run macdeployqt on our bundle
           MACDEPLOYQT="$(command -v macdeployqt || true)"
           if [ -z "$MACDEPLOYQT" ]; then
             echo "macdeployqt not found in PATH"
             exit 1
           fi
 
-          "$MACDEPLOYQT" "$APP_BUNDLE" -dmg -always-overwrite
+          "$MACDEPLOYQT" "$APP_DIR" -dmg -always-overwrite
 
           echo "Generated DMG files:"
-          find . -maxdepth 5 -name '*.dmg' -print || true
+          find dist -maxdepth 2 -name '*.dmg' -print || true
 
       - name: Upload .dmg artifacts
         uses: actions/upload-artifact@v4
         with:
           name: bitcoinII-core-v29.1.0-macos-arm64-dmg
           path: |
-            build/**/*.dmg
+            build/dist/*.dmg
           if-no-files-found: error
+
