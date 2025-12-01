@@ -47,10 +47,10 @@ Follow the instructions here: https://github.com/Bitcoin-II/BitcoinII-Core/blob/
 
 The macOS builds are **not notarized** by Apple yet, so Gatekeeper may block them the first time you run them.
 
-To run the GUI (`bitcoinII-qt`) or CLI binaries:
+To run the GUI (`bitcoinII-qt`) binaries:
 
 1. In Finder, locate the downloaded `BitcoinII-*.zip` and extract it.
-2. Open the extracted folder, **right-click** (`control`-click) `bitcoinII-qt` (or the CLI binary), and choose **Open**.
+2. Open the extracted folder, **right-click** (`control`-click) `bitcoinII-qt`, and choose **Open**.
 3. macOS will warn that the app is from an unidentified developer – click **Open** again.
 
 After doing this once, macOS will remember your choice and let you run the app normally.
