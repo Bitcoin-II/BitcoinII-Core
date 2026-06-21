@@ -24,8 +24,18 @@ class RPCGenerateTest(BitcoinIITestFramework):
         self.test_generateblock()
 
     def test_generatetoaddress(self):
-        self.generatetoaddress(self.nodes[0], 1, 'mneYUmWYsuk7kySiURxCi3AGxrAqZxLgPZ')
-        assert_raises_rpc_error(-5, "Invalid address", self.generatetoaddress, self.nodes[0], 1, '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy')
+        node = self.nodes[0]
+
+        self.log.info("Test repeated regtest generatetoaddress calls")
+        start_height = node.getblockcount()
+        address = node.get_deterministic_priv_key().address
+        for expected_height in range(start_height + 1, start_height + 4):
+            generated_blocks = self.generatetoaddress(node, 1, address)
+            assert_equal(len(generated_blocks), 1)
+            assert_equal(node.getblockcount(), expected_height)
+
+        self.generatetoaddress(node, 1, 'mneYUmWYsuk7kySiURxCi3AGxrAqZxLgPZ')
+        assert_raises_rpc_error(-5, "Invalid address", self.generatetoaddress, node, 1, '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy')
 
     def test_generateblock(self):
         node = self.nodes[0]
