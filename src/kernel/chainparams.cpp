@@ -596,9 +596,9 @@ public:
             consensus.vDeployments[deployment_pos].min_activation_height = version_bits_params.min_activation_height;
         }
 
-        genesis = CreateGenesisBlock(1750495460, 3948631054, 0x1d00ffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1750495460, 0, 0x207fffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256{"00000000379eca4e51372f2b154c8287e189c461335a8b98aff26eeb74bca0a4"});
+        assert(consensus.hashGenesisBlock == uint256{"5ac3b379cfa0600d059b007cb2b6b1b293832f6e398af62ec4e009b369e532b6"});
         assert(genesis.hashMerkleRoot == uint256{"80d1b4e9ca868f83b88b9301036205876072bdd3ded0ad4dc022e1f9266ddc49"});
 
         vFixedSeeds.clear(); //!< Regtest mode doesn't have any fixed seeds.
@@ -610,32 +610,11 @@ public:
 
         checkpointData = {
             {
-                {0, uint256{"00000000379eca4e51372f2b154c8287e189c461335a8b98aff26eeb74bca0a4"}},
+                {0, uint256{"5ac3b379cfa0600d059b007cb2b6b1b293832f6e398af62ec4e009b369e532b6"}},
             }
         };
 
-        m_assumeutxo_data = {
-            {   // For use by unit tests
-                .height = 110,
-                .hash_serialized = AssumeutxoHash{uint256{"6657b736d4fe4db0cbc796789e812d5dba7f5c143764b1b6905612f1830609d1"}},
-                .m_chain_tx_count = 111,
-                .blockhash = consteval_ctor(uint256{"696e92821f65549c7ee134edceeeeaaa4105647a3c4fd9f298c0aec0ab50425c"}),
-            },
-            {
-                // For use by fuzz target src/test/fuzz/utxo_snapshot.cpp
-                .height = 200,
-                .hash_serialized = AssumeutxoHash{uint256{"4f34d431c3e482f6b0d67b64609ece3964dc8d7976d02ac68dd7c9c1421738f2"}},
-                .m_chain_tx_count = 201,
-                .blockhash = consteval_ctor(uint256{"5e93653318f294fb5aa339d00bbf8cf1c3515488ad99412c37608b139ea63b27"}),
-            },
-            {
-                // For use by test/functional/feature_assumeutxo.py
-                .height = 299,
-                .hash_serialized = AssumeutxoHash{uint256{"a4bf3407ccb2cc0145c49ebba8fa91199f8a3903daf0883875941497d2493c27"}},
-                .m_chain_tx_count = 334,
-                .blockhash = consteval_ctor(uint256{"3bb7ce5eba0be48939b7a521ac1ba9316afee2c7bada3a0cca24188e6d7d96c0"}),
-            },
-        };
+        m_assumeutxo_data = {};
 
         chainTxData = ChainTxData{
             0,
